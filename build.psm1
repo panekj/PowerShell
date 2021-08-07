@@ -298,6 +298,8 @@ function Start-PSBuild {
         # We do not use ValidateScript since we want tab completion
         # If this parameter is not provided it will get determined automatically.
         [ValidateSet("alpine-x64",
+                     "alpine-arm",
+                     "alpine-arm64",
                      "fxdependent",
                      "fxdependent-win-desktop",
                      "linux-arm",
@@ -810,6 +812,8 @@ function New-PSOptions {
         # We do not use ValidateScript since we want tab completion
         [ValidateSet("",
                      "alpine-x64",
+                     "alpine-arm",
+                     "alpine-arm64",
                      "fxdependent",
                      "fxdependent-win-desktop",
                      "linux-arm",
@@ -1196,7 +1200,7 @@ function Start-PSPester {
         # if we are building for Alpine, we must include the runtime as linux-x64
         # will not build runnable test tools
         if ( $environment.IsLinux -and $environment.IsAlpine ) {
-            $publishArgs['runtime'] = 'alpine-x64'
+            $publishArgs['runtime'] = "alpine-$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower())"
         }
         Publish-PSTestTools @publishArgs | ForEach-Object {Write-Host $_}
     }
@@ -2353,6 +2357,8 @@ function Start-CrossGen {
 
         [Parameter(Mandatory=$true)]
         [ValidateSet("alpine-x64",
+                     "alpine-arm",
+                     "alpine-arm64",
                      "linux-arm",
                      "linux-arm64",
                      "linux-x64",
@@ -2380,6 +2386,8 @@ function Start-CrossGen {
 
             [Parameter(Mandatory = $true)]
             [ValidateSet("alpine-x64",
+                "alpine-arm",
+                "alpine-arm64",
                 "linux-arm",
                 "linux-arm64",
                 "linux-x64",
@@ -2402,6 +2410,14 @@ function Start-CrossGen {
             'alpine-x64' {
                 $targetOS = 'linux'
                 $targetArch = 'x64'
+             }
+            'alpine-arm' {
+                $targetOS = 'linux'
+                $targetArch = 'arm'
+             }
+            'alpine-arm64' {
+                $targetOS = 'linux'
+                $targetArch = 'arm64'
              }
             'win-arm' {
                 $targetOS = 'windows'
