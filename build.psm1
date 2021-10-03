@@ -348,8 +348,8 @@ function Start-PSBuild {
             throw "Build for the minimal size requires the minimal disk footprint, so `CrossGen` is not allowed"
         }
 
-        if ($Runtime -and "linux-x64", "win7-x64", "osx-x64" -notcontains $Runtime) {
-            throw "Build for the minimal size is enabled only for following runtimes: 'linux-x64', 'win7-x64', 'osx-x64'"
+        if ($Runtime -and "linux-x64", "alpine-x64", "win7-x64", "osx-x64" -notcontains $Runtime) {
+            throw "Build for the minimal size is enabled only for following runtimes: 'linux-x64', 'alpine-x64', 'win7-x64', 'osx-x64'"
         }
     }
 
@@ -855,6 +855,9 @@ function New-PSOptions {
     if (-not $Runtime) {
         if ($environment.IsLinux) {
             $Runtime = "linux-x64"
+            if ($environment.IsAlpine) {
+                $Runtime = "alpine-x64"
+            }
         } elseif ($environment.IsMacOS) {
             if ($PSVersionTable.OS.Contains('ARM64')) {
                 $Runtime = "osx-arm64"
