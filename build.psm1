@@ -1200,7 +1200,7 @@ function Start-PSPester {
         # if we are building for Alpine, we must include the runtime as linux-x64
         # will not build runnable test tools
         if ( $environment.IsLinux -and $environment.IsAlpine ) {
-            $publishArgs['runtime'] = "alpine-$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower())"
+            $publishArgs['runtime'] = 'alpine-{0}' -f [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()
         }
         Publish-PSTestTools @publishArgs | ForEach-Object {Write-Host $_}
     }
