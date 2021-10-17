@@ -854,9 +854,9 @@ function New-PSOptions {
 
     if (-not $Runtime) {
         if ($environment.IsLinux) {
-            $Runtime = "linux-x64"
+            $Runtime = 'linux-{0}' -f [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()
             if ($environment.IsAlpine) {
-                $Runtime = "alpine-x64"
+                $Runtime = 'alpine-{0}' -f [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()
             }
         } elseif ($environment.IsMacOS) {
             if ($PSVersionTable.OS.Contains('ARM64')) {
@@ -1895,7 +1895,9 @@ function Start-PSBootstrap {
         if ($environment.IsLinux -or $environment.IsMacOS) {
             # This allows sudo install to be optional; needed when running in containers / as root
             # Note that when it is null, Invoke-Expression (but not &) must be used to interpolate properly
-            $sudo = if (!$NoSudo) { "sudo" }
+            $sudo = if (!$NoSudo) {
+                if (Get-Command 'sudo') { "sudo" } elseif (Get-Command 'doas') { "doas" } else { Write-Warning 'sudo/doas not found. Defaulting to `-NoSudo`' }
+            }
 
             if ($BuildLinuxArm -and $environment.IsLinux -and -not $environment.IsUbuntu) {
                 Write-Error "Cross compiling for linux-arm is only supported on Ubuntu environment"
@@ -1998,7 +2000,7 @@ function Start-PSBootstrap {
                 $Deps += 'libunwind', 'libcurl', 'bash', 'cmake', 'clang', 'build-base', 'git', 'curl'
 
                 Start-NativeExecution {
-                    Invoke-Expression "apk add $Deps"
+                    Invoke-Expression "$sudo apk add $Deps"
                 }
             }
 
@@ -2010,7 +2012,18 @@ function Start-PSBootstrap {
                     $gemsudo = ''
                     if($environment.IsMacOS -or $env:TF_BUILD) {
                         $gemsudo = $sudo
+                    } else {
+                        if((Read-Host -Prompt 'Run `gem install` with `sudo`/`doas`? [y/n]').ToLower() -eq 'y') {
+                            $gemsudo = $sudo
+                        }
                     }
+
+                    try {
+                        Get-Command 'gem'
+                    } catch {
+                        throw '`gem` is not installed! Skipping `-Package` option.'
+                    }
+
                     Start-NativeExecution ([ScriptBlock]::Create("$gemsudo gem install ffi -v 1.12.0 --no-document"))
                     Start-NativeExecution ([ScriptBlock]::Create("$gemsudo gem install fpm -v 1.11.0 --no-document"))
                     Start-NativeExecution ([ScriptBlock]::Create("$gemsudo gem install ronn -v 0.7.3 --no-document"))
